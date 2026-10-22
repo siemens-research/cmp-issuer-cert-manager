@@ -1,0 +1,74 @@
+name: Demo (EJBCA + Kind)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  demo:
+    name: README demo on Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Start local EJBCA
+        run: |
+          (cd ejbca && [ -d ejbca-docker ] || tar -xzf ejbca-docker.tar.gz)
+          (cd ejbca/ejbca-docker && docker compose up -d)
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:6080/ejbca/ra/cas.xhtml && break
+            echo "waiting for EJBCA ($i/60)..."; sleep 10
+          done
+          curl -sf -o /dev/null http://localhost:6080/ejbca/ra/cas.xhtml
+          # give EJBCA time to refresh its CRLs
+          sleep 5
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: kind
+
+      - name: Build image and deploy controller
+        run: |
+          make docker-build
+          make deploy-cert-manager
+          make kind-load
+          make build-installer
+          kubectl apply -f dist/install.yaml
+          kubectl wait --for=condition=Available deployment --all \
+            -n cmp-issuer-poc --timeout=180s
+
+      - name: Create secret and issuer
+        run: |
+          GW=$(docker network inspect bridge --format '{{(index .IPAM.Config 0).Gateway}}')
+          echo "Docker bridge gateway: $GW"
+          sed "s#10\.0\.2\.15#${GW}#" \
+            demo/localejbca/ejbca-issuer_v1alpha1_cmpissuer.yaml > /tmp/cmpissuer.yaml
+          kubectl apply -f demo/localejbca/upstream-configuration_ejbca.yaml
+          kubectl apply -f /tmp/cmpissuer.yaml
+          kubectl wait --for=condition=Ready cmpissuer/localejbca-cmpissuer --timeout=120s
+
+      - name: Request certificate
+        run: |
+          kubectl apply -f demo/localejbca/certificate_localejbca.yaml
+          kubectl wait --for=condition=Ready certificate/certificate-by-localejbca --timeout=180s
+          kubectl get secret certificate-by-localejbca
+          kubectl get secret certificate-by-localejbca -o jsonpath='{.data.tls\.crt}' \
+            | base64 -d | openssl x509 -noout -subject -issuer -dates
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          kubectl get pods -A || true
+          kubectl logs -n cmp-issuer-poc -l control-plane=controller-manager --tail=200 || true
+          kubectl describe certificate,certificaterequest,cmpissuer -A || true
+          docker ps -a || true
+          (cd ejbca/ejbca-docker && docker compose logs --tail=100) || true
