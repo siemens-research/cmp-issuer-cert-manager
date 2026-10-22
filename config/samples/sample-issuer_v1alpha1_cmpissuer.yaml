@@ -1,0 +1,10 @@
+apiVersion: cmp-issuer.siemens.com/v1alpha1
+kind: CMPIssuer
+metadata:
+  labels:
+    app.kubernetes.io/name: cmp-external-issuer
+    app.kubernetes.io/managed-by: kustomize
+  name: cmpissuer-sample
+spec:
+  authSecretName: "cmpissuer-sample-credentials"
+  url: "http://cmp-issuer.siemens.com/api/v1"

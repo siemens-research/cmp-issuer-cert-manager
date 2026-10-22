@@ -1,0 +1,15 @@
+# permissions to approve all cmp-issuer.siemens.com requests
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-manager-controller-approve:cmp-issuer-siemens-com
+rules:
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - signers
+  verbs:
+  - approve
+  resourceNames:
+  - cmpissuers.cmp-issuer.siemens.com/*
+  - cmpclusterissuers.cmp-issuer.siemens.com/*

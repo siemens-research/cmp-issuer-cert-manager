@@ -1,0 +1,13 @@
+apiVersion: cmp-issuer.siemens.com/v1alpha1
+kind: CMPIssuer
+metadata:
+  labels:
+    app.kubernetes.io/name: cmp-external-issuer
+    app.kubernetes.io/managed-by: kustomize
+  name: localejbca-cmpissuer
+  
+spec:
+  authSecretName: "upstream-conf-localejbca"
+  url: "http://cmp-ejbca-issuer.siemens.com/api/v1"
+  cmpupstreamurl: "http://10.0.2.15:6080/ejbca/publicweb/cmp/cmp_imprint_RA"
+

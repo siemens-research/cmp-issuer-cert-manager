@@ -1,0 +1,74 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificaterequests
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificaterequests/status
+  verbs:
+  - patch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/status
+  verbs:
+  - patch
+- apiGroups:
+  - certificates.k8s.io
+  resourceNames:
+  - cmpclusterissuers.cmp-issuer.siemens.com/*
+  - cmpissuers.cmp-issuer.siemens.com/*
+  resources:
+  - signers
+  verbs:
+  - sign
+- apiGroups:
+  - cmp-issuer.siemens.com
+  resources:
+  - cmpclusterissuers
+  - cmpissuers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cmp-issuer.siemens.com
+  resources:
+  - cmpclusterissuers/status
+  - cmpissuers/status
+  verbs:
+  - patch

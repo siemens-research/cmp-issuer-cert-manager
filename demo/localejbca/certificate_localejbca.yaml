@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: certificate-by-localejbca
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-by-localejbca
+  
+spec:
+  secretName: certificate-by-localejbca
+
+  commonName: test-localejbca-cmpissuer.siemens.com
+  subject:
+    organizations:
+      - "Siemens"
+    countries:
+      - "DE"
+  
+  issuerRef:
+    name: localejbca-cmpissuer
+    group: cmp-issuer.siemens.com
+    kind: CMPIssuer
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 4096
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d

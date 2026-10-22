@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: upstream-conf-localejbca
+  
+data:
+  # base64 encoded values
+  CmpSharedSecret: U2VjcmV0Q21w
+
